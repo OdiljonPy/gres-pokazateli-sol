@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -24,7 +25,7 @@ SECRET_KEY = 'django-insecure-1j1+f^+eoqe+=m(3=5@2b7$f&v=qd(ow9rapx_((q%okk2-uom
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 # Application definition
 
@@ -35,13 +36,17 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',
+    'rest_framework_simplejwt',
+    'rest_framework',
 
-    'rest_framework'
+    'solar'
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -65,6 +70,14 @@ TEMPLATES = [
             ],
         },
     },
+]
+
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    'x-api-key',
+    'content-type',
+    'Authorization'
 ]
 
 WSGI_APPLICATION = 'config.wsgi.application'
@@ -102,11 +115,11 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+# TIME_ZONE = 'Asia/Tashkent'
 
 USE_I18N = True
 
-USE_TZ = True
+USE_TZ = False
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
@@ -117,7 +130,97 @@ STATICFILES_DIRS = [
     BASE_DIR / 'static'
 ]
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+
+}
+
+JWT_USE = True
+ACCESS_TOKEN_LIFETIME = timedelta(days=7)
+REFRESH_TOKEN_LIFETIME = timedelta(days=14)
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': ACCESS_TOKEN_LIFETIME,
+    'REFRESH_TOKEN_LIFETIME': REFRESH_TOKEN_LIFETIME,
+}
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+SOLAR = {
+    1: {
+        'A+': 'B409',
+        'A-': 'B410',
+        'R+': 'B411',
+        'R-': 'B412',
+        'P_total': 'G275',
+        'P_1': 'G276',
+        'P_2': 'G277',
+        'P_3': 'G278',
+        'U_1': 'G279',
+        'U_2': 'G280',
+        'U_3': 'G281',
+        'I_1': 'G282',
+        'I_2': 'G283',
+        'I_3': 'G284',
+        'coefficient': 300,
+        "count": 5
+    },
+    2: {
+        'A+': 'B413',
+        'A-': 'B414',
+        'R+': 'B415',
+        'R-': 'B416',
+        'P_total': 'G286',
+        'P_1': 'G287',
+        'P_2': 'G288',
+        'P_3': 'G289',
+        'U_1': 'G290',
+        'U_2': 'G291',
+        'U_3': 'G292',
+        'I_1': 'G293',
+        'I_2': 'G294',
+        'I_3': 'G295',
+        'coefficient': 300,
+        "count": 6,
+    },
+    3: {
+        'A+': 'B433',
+        'A-': 'B434',
+        'R+': 'B435',
+        'R-': 'B436',
+        'P_total': 'G303',
+        'P_1': 'G304',
+        'P_2': 'G305',
+        'P_3': 'G306',
+        'U_1': 'G307',
+        'U_2': 'G308',
+        'U_3': 'G309',
+        'I_1': 'G310',
+        'I_2': 'G311',
+        'I_3': 'G312',
+        'coefficient': 80,
+        "count": 6,
+    },
+    4: {
+        'A+': 'B437',
+        'A-': 'B438',
+        'R+': 'B439',
+        'R-': 'B440',
+        'P_total': 'G318',
+        'P_1': 'G319',
+        'P_2': 'G320',
+        'P_3': 'G321',
+        'U_1': 'G322',
+        'U_2': 'G323',
+        'U_3': 'G324',
+        'I_1': 'G325',
+        'I_2': 'G326',
+        'I_3': 'G327',
+        'coefficient': 120,
+        "count": 5
+    }
+}

@@ -2,10 +2,13 @@
 """Django's command-line utility for administrative tasks."""
 import os
 import sys
+from solar.utils import create_background_task
 
 
 def main():
     """Run administrative tasks."""
+    if 'test' not in sys.argv and 'migrate' not in sys.argv:
+        create_background_task()
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
     try:
         from django.core.management import execute_from_command_line
