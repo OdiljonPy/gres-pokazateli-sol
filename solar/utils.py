@@ -10,7 +10,7 @@ def fetch_solar_data(url):
     response = requests.get(url)
     if response.status_code != 200:
         raise BadRequestException('Bad request or not containing solar data')
-    return response.text.split('\r\n')
+    return response.text.split('\r\n')[:1]
 
 
 def parse_line(line, solar_lookup):

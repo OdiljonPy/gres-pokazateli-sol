@@ -6,4 +6,4 @@ from .models import Solar
 
 @admin.register(Solar)
 class SolarAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'number_solar', 'key', 'value', 'crated_at_new')
+    list_display = ('id', 'name', 'number_solar', 'key', 'value')

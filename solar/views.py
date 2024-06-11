@@ -12,7 +12,9 @@ import pytz
 from .models import Solar
 from .serializers import ReadOnlySolarSerializer, SolarGetUpdatesSerializer
 from .utils import create_solar_data_live
+
 tz_UZ = pytz.timezone('Asia/Tashkent')
+
 
 def home(request):
     return render(request, 'home.html')
@@ -70,16 +72,27 @@ def get_updates(request):
     start_index = (int(page) - 1) * int(page_size)
     end_index = start_index + int(page_size)
     sliced_data = dict(list(result_data.items())[start_index:end_index])
-
-    return Response(
-        data={
-            'response': sliced_data,
-            'total_P_yesterday': total_p_sum(solar_objs_yesterday),
-            'total_P_today': total_p_sum(solar_objs_today),
-            'total_P_month': total_p_sum(solar_objs_month),
-            'total_P_year': total_p_sum(solar_objs_year)
-        },
-        status=status.HTTP_200_OK)
+    start_solar = (page - 1) * page_size + 1
+    end_solar = start_solar + page_size
+    solar_objs = []
+    for i in range(start_solar, end_solar):
+        solar_obj = Solar.objects.filter(Q(crated_at__gte=today) & Q(key='P_total') & Q(number_solar=i)).order_by(
+            '-value')[:1]
+        solar_objs.extend(solar_obj)
+    serializer = ReadOnlySolarSerializer(solar_objs, many=True)
+    serializer_objects = serializer.data
+    solar_objects = defaultdict(list)
+    for solar_obj in serializer_objects:
+        solar_objects['solar_' + str(solar_obj['number_solar'])].append(solar_obj)
+    sliced_data_2 = dict(solar_objects)
+    return Response({"response": {
+        'data': sliced_data,
+        "max": sliced_data_2,
+        'total_P_yesterday': total_p_sum(solar_objs_yesterday),
+        'total_P_today': total_p_sum(solar_objs_today),
+        'total_P_month': total_p_sum(solar_objs_month),
+        'total_P_year': total_p_sum(solar_objs_year),
+    }, "ok": True}, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
