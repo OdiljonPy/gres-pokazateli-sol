@@ -24,7 +24,7 @@ def total_p_sum(solar_objs):
 
 
 @api_view(['GET'])
-# @permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated])
 def get_updates(request):
     page = int(request.GET.get('page', 1))
     page_size = int(request.GET.get('page_size', 2))
