@@ -10,7 +10,7 @@ def fetch_solar_data(url):
     response = requests.get(url)
     if response.status_code != 200:
         raise BadRequestException('Bad request or not containing solar data')
-    return response.text.split('\\n')
+    return response.text.split('\r\n')
 
 
 def parse_line(line, solar_lookup):
@@ -35,7 +35,7 @@ def parse_line(line, solar_lookup):
 
 def create_solar_data():
     from .serializers import SolarSerializer
-    lines = fetch_solar_data(' http://127.0.0.1:8000')
+    lines = fetch_solar_data('http://10.10.20.1/crq?req=current')
     solar_lookup = {v: (idx + 1, k) for idx, solar in enumerate(settings.SOLAR.values()) for k, v in solar.items()}
     solar_objects = []
 
@@ -52,7 +52,7 @@ def create_solar_data():
 def create_solar_data_live():
     from .serializers import SolarSerializer
     from .models import Solar
-    lines = fetch_solar_data('http://127.0.0.1:8000')
+    lines = fetch_solar_data('http://10.10.20.1/crq?req=current')
     solar_lookup = {v: (idx + 1, k) for idx, solar in enumerate(settings.SOLAR.values()) for k, v in solar.items()}
     solar_objects = []
 

@@ -1,19 +1,18 @@
 from collections import defaultdict
-
+from datetime import datetime, timedelta
 from django.contrib.auth.models import User
 from django.db.models import Sum, Q
 from django.shortcuts import render
-from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-
+import pytz
 from .models import Solar
 from .serializers import ReadOnlySolarSerializer, SolarGetUpdatesSerializer
 from .utils import create_solar_data_live
-
+tz_UZ = pytz.timezone('Asia/Tashkent')
 
 def home(request):
     return render(request, 'home.html')
@@ -31,11 +30,11 @@ def get_updates(request):
     from_ = (page * page_size) - (page_size - 1)
     to_ = page * page_size
 
-    now = timezone.datetime.today()
-    today = now - timezone.timedelta(hours=now.hour, minutes=now.minute, seconds=now.second)
-    yesterday = today - timezone.timedelta(days=1)
-    last_month = today - timezone.timedelta(days=(today.day - 1))
-    last_year = today - timezone.timedelta(days=timezone.datetime.now().timetuple().tm_yday - 1)
+    now = datetime.today().now(tz_UZ)
+    today = now - timedelta(hours=now.hour, minutes=now.minute, seconds=now.second)
+    yesterday = today - timedelta(days=1)
+    last_month = today - timedelta(days=(today.day - 1))
+    last_year = today - timedelta(days=datetime.now(tz_UZ).timetuple().tm_yday - 1)
 
     solar_objs_yesterday = Solar.objects.filter(
         Q(time__gte=yesterday) & Q(time__lte=today) & Q(key='P_total') &
@@ -88,9 +87,9 @@ def get_updates(request):
 def get_solar_day(request):
     page = int(request.GET.get('page', 1))
     page_size = int(request.GET.get('page_size', 2))
-    now = timezone.datetime.today()
+    now = datetime.today().now(tz_UZ)
     solar_objs = []
-    today = now - timezone.timedelta(hours=now.hour, minutes=now.minute, seconds=now.second)
+    today = now - timedelta(hours=now.hour, minutes=now.minute, seconds=now.second)
     start_solar = (page - 1) * page_size + 1
     end_solar = start_solar + page_size
     for i in range(start_solar, end_solar):
@@ -133,13 +132,13 @@ def get_data(request):
     page_size = int(request.GET.get('page_size', 2))
     from_ = (page * page_size) - (page_size - 1)
     to_ = page * page_size
-    six_hours_before = timezone.datetime.now() - timezone.timedelta(hours=6)
+    six_hours_before = datetime.now(tz_UZ) - timedelta(hours=6)
 
     data = {}
     for number_solar in range(from_, to_ + 1):
         array = []
         start_time = six_hours_before
-        end_time = start_time + timezone.timedelta(minutes=30)
+        end_time = start_time + timedelta(minutes=30)
 
         for _ in range(12):
             solar_time_delta = Solar.objects.filter(
@@ -150,7 +149,7 @@ def get_data(request):
             array.append({"value": total_p_sum(solar_time_delta), "created_at": end_time})
 
             start_time = end_time
-            end_time += timezone.timedelta(minutes=30)
+            end_time += timedelta(minutes=30)
 
         data[f"solar_{number_solar}"] = array
 
