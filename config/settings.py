@@ -115,7 +115,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-# TIME_ZONE = 'Asia/Tashkent'
+TIME_ZONE = 'Asia/Tashkent'
 
 USE_I18N = True
 
@@ -152,10 +152,6 @@ SIMPLE_JWT = {
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 SOLAR = {
     1: {
-        'A+': 'B409',
-        'A-': 'B410',
-        'R+': 'B411',
-        'R-': 'B412',
         'P_total': 'G275',
         'P_1': 'G276',
         'P_2': 'G277',
@@ -170,10 +166,6 @@ SOLAR = {
         "count": 5
     },
     2: {
-        'A+': 'B413',
-        'A-': 'B414',
-        'R+': 'B415',
-        'R-': 'B416',
         'P_total': 'G286',
         'P_1': 'G287',
         'P_2': 'G288',
@@ -188,10 +180,6 @@ SOLAR = {
         "count": 6,
     },
     3: {
-        'A+': 'B433',
-        'A-': 'B434',
-        'R+': 'B435',
-        'R-': 'B436',
         'P_total': 'G303',
         'P_1': 'G304',
         'P_2': 'G305',
@@ -206,10 +194,6 @@ SOLAR = {
         "count": 6,
     },
     4: {
-        'A+': 'B437',
-        'A-': 'B438',
-        'R+': 'B439',
-        'R-': 'B440',
         'P_total': 'G318',
         'P_1': 'G319',
         'P_2': 'G320',

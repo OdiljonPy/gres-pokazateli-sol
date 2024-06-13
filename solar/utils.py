@@ -1,16 +1,17 @@
-import random
-import requests
-from django.conf import settings
-from .exceptions import BadRequestException
-from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime
+
+import requests
+from apscheduler.schedulers.background import BackgroundScheduler
+from django.conf import settings
+
+from .exceptions import BadRequestException
 
 
 def fetch_solar_data(url):
     response = requests.get(url)
     if response.status_code != 200:
         raise BadRequestException('Bad request or not containing solar data')
-    return response.text.split('\r\n')[:1]
+    return response.text.split('\r\n')[1:]
 
 
 def parse_line(line, solar_lookup):
@@ -79,5 +80,5 @@ def create_solar_data_live():
 
 def create_background_task():
     scheduler = BackgroundScheduler()
-    scheduler.add_job(create_solar_data, trigger='interval', seconds=2, timezone='Asia/Tashkent')
+    scheduler.add_job(create_solar_data, trigger='interval', seconds=10, timezone='Asia/Tashkent')
     scheduler.start()
