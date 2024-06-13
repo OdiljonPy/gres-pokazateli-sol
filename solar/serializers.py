@@ -20,12 +20,12 @@ class ReadOnlySolarSerializer(SolarSerializer):
         fields = ['id', 'number_solar', 'value', 'key', 'created_at', "time"]
 
     def to_representation(self, instance):
-        formatted_crated_at = instance.created_at.strftime('%Y-%m-%d %H:%M')
+        formatted_crated_at = instance.created_at.strftime('%Y-%m-%d %H:%M:%S')
         data = {
             'id': instance.id,
             'number_solar': instance.number_solar,
             instance.key: instance.value,
-            'crated_at': formatted_crated_at,
+            'created_at': formatted_crated_at,
         }
 
         return data

@@ -155,13 +155,12 @@ def get_data(request):
         array = []
         start_time = six_hours_before
         end_time = start_time + timedelta(minutes=30)
-        formatted_crated_at = end_time.strftime('%Y-%m-%d %H:%M')
         for _ in range(12):
             solar_time_delta = Solar.objects.filter(
                 Q(time__gte=start_time) & Q(time__lte=end_time)
                 & Q(key='P_total') & Q(number_solar__gte=from_) & Q(number_solar__lte=to_)
             ).values('number_solar').annotate(total_P=Sum('value'))
-
+            formatted_crated_at = end_time.strftime('%Y-%m-%d %H:%M:%S')
             array.append({"value": total_p_sum(solar_time_delta), "created_at": formatted_crated_at})
 
             start_time = end_time
