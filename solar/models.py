@@ -18,7 +18,7 @@ class Solar(models.Model):
     value = models.FloatField()
     status = models.IntegerField()
     key = models.CharField(max_length=50, blank=True, null=True)
-    crated_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):

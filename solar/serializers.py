@@ -7,7 +7,7 @@ from .models import Solar
 class SolarSerializer(serializers.ModelSerializer):
     class Meta:
         model = Solar
-        fields = ['id', 'number_solar', 'name', 'time', 'status', 'value', 'crated_at', 'key', 'time']
+        fields = ['id', 'number_solar', 'name', 'time', 'status', 'value', 'created_at', 'key', 'time']
 
     def create(self, validated_data):
         coefficient = settings.SOLAR.get(validated_data['number_solar']).get('coefficient')
@@ -17,10 +17,10 @@ class SolarSerializer(serializers.ModelSerializer):
 
 class ReadOnlySolarSerializer(SolarSerializer):
     class Meta(SolarSerializer.Meta):
-        fields = ['id', 'number_solar', 'value', 'key', 'crated_at', "time"]
+        fields = ['id', 'number_solar', 'value', 'key', 'created_at', "time"]
 
     def to_representation(self, instance):
-        formatted_crated_at = instance.crated_at.strftime('%Y-%m-%d %H:%M')
+        formatted_crated_at = instance.created_at.strftime('%Y-%m-%d %H:%M')
         data = {
             'id': instance.id,
             'number_solar': instance.number_solar,
