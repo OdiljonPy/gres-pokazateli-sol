@@ -9,11 +9,6 @@ class SolarSerializer(serializers.ModelSerializer):
         model = Solar
         fields = ['id', 'number_solar', 'name', 'time', 'status', 'value', 'created_at', 'key', 'time']
 
-    def create(self, validated_data):
-        coefficient = settings.SOLAR.get(validated_data['number_solar']).get('coefficient')
-        validated_data['value'] = round((validated_data['value'] / 1000) * coefficient, 2)
-        return super(SolarSerializer, self).create(validated_data)
-
 
 class ReadOnlySolarSerializer(SolarSerializer):
     class Meta(SolarSerializer.Meta):
@@ -38,7 +33,7 @@ class SolarGetUpdatesSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         data = {
-            f"solar_{instance.number_solar}": (f"{instance.key}", instance.value),
-            'count': settings.SOLAR.get(instance.number_solar).get('count')
+            f"solar_{instance.get('number_solar')}": (f"{instance.get('key')}", instance.get('value')),
+            'count': settings.SOLAR.get(instance.get('number_solar')).get('count')
         }
         return data

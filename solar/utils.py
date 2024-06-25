@@ -1,81 +1,120 @@
+from contextlib import suppress
 from datetime import datetime
 
 import requests
 from apscheduler.schedulers.background import BackgroundScheduler
 from django.conf import settings
 
-from .exceptions import BadRequestException
+# def fetch_solar_data(url):
+#     response = requests.get(url)
+#     if response.status_code != 200:
+#         raise BadRequestException('Bad request or not containing solar data')
+#     return response.text.split('\r\n')[1:]
+#
+#
+# def parse_line(line, solar_lookup):
+#     data = line.split(',')
+#     if len(data) > 3:
+#         name, timestamp, value, status_value = data[:4]
+#         timestamp = timestamp.strip()
+#         datetime_str = timestamp.replace('w', '')
+#         created_at = datetime.strptime(datetime_str, "%d-%m-%Y %H:%M:%S.%f")
+#         if name in solar_lookup:
+#             value = float(value)
+#             number_solar, key = solar_lookup[name]
+#             if key in ('P_total', 'P_1', 'P_2', 'P_3'):
+#                 coefficient = settings.SOLAR.get(number_solar).get('coefficient')
+#                 value = (value / 1000) * coefficient
+#             return {
+#                 'number_solar': number_solar,
+#                 'name': name,
+#                 'time': created_at,
+#                 'value': round(value, 2),
+#                 'status': int(status_value),
+#                 'key': key
+#             }
+#     return None
+#
+#
+# def create_solar_data():
+#     from .serializers import SolarSerializer
+#     lines = fetch_solar_data('http://195.69.218.121/crq?req=current')
+#     solar_lookup = {v: (idx + 1, k) for idx, solar in enumerate(settings.SOLAR.values()) for k, v in solar.items()}
+#
+#     for line in lines:
+#         solar_data = parse_line(line, solar_lookup)
+#         if solar_data and solar_data.get('key') == "P_total":
+#             serializer = SolarSerializer(data=solar_data)
+#             if serializer.is_valid():
+#                 serializer.save()
+#             continue
+#         continue
+#
+#
+# def create_solar_data_live():
+#     from .serializers import SolarGetUpdatesSerializer
+#     lines = fetch_solar_data('http://195.69.218.121/crq?req=current')
+#     solar_lookup = {v: (idx + 1, k) for idx, solar in enumerate(settings.SOLAR.values()) for k, v in solar.items()}
+#     solar_objects = []
+#
+#     for line in lines:
+#         solar_data = parse_line(line, solar_lookup)
+#         if solar_data:
+#             serializer = SolarGetUpdatesSerializer(data=solar_data)
+#             if serializer.is_valid():
+#                 solar_objects.append(serializer.data)
+#     return solar_objects
 
 
 def fetch_solar_data(url):
-    response = requests.get(url)
+    from .exceptions import BadRequestException
+    response = requests.Response()
+    with suppress(Exception):
+        response = requests.get(url)
     if response.status_code != 200:
         raise BadRequestException('Bad request or not containing solar data')
     return response.text.split('\r\n')[1:]
 
 
-def parse_line(line, solar_lookup):
+def parse_line(line, channels: dict) -> dict:
     data = line.split(',')
     if len(data) > 3:
         name, timestamp, value, status_value = data[:4]
         timestamp = timestamp.strip()
         datetime_str = timestamp.replace('w', '')
         created_at = datetime.strptime(datetime_str, "%d-%m-%Y %H:%M:%S.%f")
-        if name in solar_lookup:
-            number_solar, key = solar_lookup[name]
+        if name in channels:
+            number_solar, coefficient = channels.get(name)
+            value = (float(value) / 1000) * coefficient
             return {
                 'number_solar': number_solar,
                 'name': name,
                 'time': created_at,
-                'value': float(value),
+                'value': round(value, 2),
                 'status': int(status_value),
-                'key': key
+                'key': 'P_total'
             }
-    return None
+    return {}
 
 
 def create_solar_data():
     from .serializers import SolarSerializer
-    lines = fetch_solar_data('http://10.10.20.1/crq?req=current')
-    solar_lookup = {v: (idx + 1, k) for idx, solar in enumerate(settings.SOLAR.values()) for k, v in solar.items()}
-    solar_objects = []
+    lines = fetch_solar_data('http://195.69.218.121/crq?req=total')
+    P_total_channels = list(
+        map(
+            lambda i: [settings.SOLAR.get(i).get('P_total'), [i, settings.SOLAR.get(i).get('coefficient')]],
+            list(range(1, len(settings.SOLAR) + 1)))
+    )
+    P_total_channels = dict(P_total_channels)
 
     for line in lines:
-        solar_data = parse_line(line, solar_lookup)
+        solar_data = parse_line(line, P_total_channels)
         if solar_data:
             serializer = SolarSerializer(data=solar_data)
             if serializer.is_valid():
-                solar_obj = serializer.save()
-                solar_objects.append(solar_obj)
-    return solar_objects
-
-
-def create_solar_data_live():
-    from .serializers import SolarSerializer
-    from .models import Solar
-    lines = fetch_solar_data('http://10.10.20.1/crq?req=current')
-    solar_lookup = {v: (idx + 1, k) for idx, solar in enumerate(settings.SOLAR.values()) for k, v in solar.items()}
-    solar_objects = []
-
-    for line in lines:
-        solar_data = parse_line(line, solar_lookup)
-        if solar_data:
-            serializer = SolarSerializer(data=solar_data)
-            if serializer.is_valid():
-                number_solar = serializer.data.get('number_solar')
-                value = serializer.data.get('value')
-                coefficient = settings.SOLAR.get(number_solar).get('coefficient')
-                value = round((value / 1000) * coefficient, 2)
-                new_solar = Solar(
-                    number_solar=number_solar,
-                    name=serializer.data.get('name'),
-                    time=serializer.data.get('time'),
-                    value=value,
-                    status=serializer.data.get('status'),
-                    key=serializer.data.get('key')
-                )
-                solar_objects.append(new_solar)
-    return solar_objects
+                serializer.save()
+            continue
+        continue
 
 
 def create_background_task():
