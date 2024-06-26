@@ -133,9 +133,13 @@ def get_live(page, page_size) -> dict:
                     'U_1': round(all_channels.get(SOLAR.get(i).get('U_1'), 0.0), 2),
                     'U_2': round(all_channels.get(SOLAR.get(i).get('U_2'), 0.0), 2),
                     'U_3': round(all_channels.get(SOLAR.get(i).get('U_3'), 0.0), 2),
-                    'I_1': round(all_channels.get(SOLAR.get(i).get('I_1'), 0.0), 2),
-                    'I_2': round(all_channels.get(SOLAR.get(i).get('I_2'), 0.0), 2),
-                    'I_3': round(all_channels.get(SOLAR.get(i).get('I_3'), 0.0), 2),
+                    'I_1': round(
+                        (all_channels.get(SOLAR.get(i).get('I_1'), 0.0) / 1000) * SOLAR.get(i).get('coefficient'), 2),
+                    'I_2': round(
+                        (all_channels.get(SOLAR.get(i).get('I_2'), 0.0) / 1000) * SOLAR.get(i).get('coefficient'), 2),
+                    'I_3': round(
+                        (all_channels.get(SOLAR.get(i).get('I_3'), 0.0) / 1000) * SOLAR.get(i).get('coefficient'), 2),
+                    'f': round(all_channels.get(SOLAR.get(i).get('f'), 0.0), 2),
                     'count': SOLAR.get(i).get('count')
                 }
         }, list(range(from_, to_ + 1)))
