@@ -1,7 +1,7 @@
 from collections import defaultdict
 from contextlib import suppress
 from datetime import timedelta
-
+from .task_hourly import task_hourly
 from django.contrib.auth.models import User
 from django.db.models import Sum, Q
 from django.shortcuts import render
@@ -18,7 +18,7 @@ from .serializers import ReadOnlySolarSerializer, SolarGetUpdatesSerializer
 # from .utils import create_solar_data_live
 from .repo.get_updates import get_live
 from .repo.get_data import get_data
-
+from django.conf import settings
 
 def home(request):
     return render(request, 'home.html')
@@ -190,3 +190,13 @@ def get_data_api(request):
     page = int(request.GET.get('page', 1))
     page_size = int(request.GET.get('page_size', 2))
     return Response(get_data(page, page_size), status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def run_scheduler_api(request):
+    if settings.SCHEDULER == 0:
+        task_hourly()
+        settings.SCHEDULER = 1
+        return Response({"ok": True}, status=status.HTTP_200_OK)
+
+    return Response({"ok": False, "message": "already running"}, status=status.HTTP_400_BAD_REQUEST)
