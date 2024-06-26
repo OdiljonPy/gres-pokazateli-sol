@@ -1,7 +1,7 @@
 from django.conf import settings
 from rest_framework import serializers
 
-from .models import Solar
+from .models import Solar, SolarDay
 
 
 class SolarSerializer(serializers.ModelSerializer):
@@ -13,6 +13,23 @@ class SolarSerializer(serializers.ModelSerializer):
 class ReadOnlySolarSerializer(SolarSerializer):
     class Meta(SolarSerializer.Meta):
         fields = ['id', 'number_solar', 'value', 'key', 'created_at', "time"]
+
+    def to_representation(self, instance):
+        formatted_crated_at = instance.created_at.strftime('%Y-%m-%d %H:%M:%S')
+        data = {
+            'id': instance.id,
+            'number_solar': instance.number_solar,
+            instance.key: instance.value,
+            'created_at': formatted_crated_at,
+        }
+
+        return data
+
+
+class ReadOnlySolarDAYSerializer(serializers.ModelSerializer):
+    class Meta(SolarSerializer.Meta):
+        model = SolarDay
+        fields = ['id', 'number_solar', 'total_value', 'created_at']
 
     def to_representation(self, instance):
         formatted_crated_at = instance.created_at.strftime('%Y-%m-%d %H:%M:%S')

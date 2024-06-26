@@ -5,6 +5,8 @@ from datetime import datetime, timedelta
 from ..exceptions import BadRequestException
 from django.conf import settings
 
+from ..serializers import ReadOnlySolarDAYSerializer
+
 SOLAR = settings.SOLAR
 
 
@@ -28,5 +30,5 @@ def get_data(page, page_size):
     for i in range(from_, to_ + 1):
         solars = SolarDay.objects.filter(created_at__lte=now - timedelta(hours=6), created_at__gte=now,
                                          number_solar=i).order_by('-created_at')[:12]
-        data[f'solar_{i}'] = solars
+        data[f'solar_{i}'] = ReadOnlySolarDAYSerializer(solars, many=True).data
     return {'result': dict(data), 'ok': True}
