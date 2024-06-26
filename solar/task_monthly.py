@@ -12,5 +12,5 @@ def task_solar_month():
                                                      created_at__gte=now - timedelta(days=30))
                              .aggregate(total_sum=Sum('total_value')))
         solar_month = SolarMonth.objects.create(number_solar=solar_id, total_value=solar_month_total, status=0,
-                                              name=str(solar_id))
+                                                name=str(solar_id))
         solar_month.save()

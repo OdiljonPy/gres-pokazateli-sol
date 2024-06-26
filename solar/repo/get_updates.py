@@ -1,10 +1,11 @@
 from contextlib import suppress
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import requests
 from django.conf import settings
 
 from ..exceptions import BadRequestException
+from django.db.models import Sum
 
 SOLAR = settings.SOLAR
 
@@ -41,38 +42,9 @@ def get_solar_data(channels: dict, rows_: str) -> float:
     return 0
 
 
-def total_P_yesterday(channels, date: dict) -> float:
-    real_rows = safe_request(
-        url=f"http://195.69.218.121/crq?req=archive&type=g&interval=day&"
-            f"t1={date.get('year')}{date.get('month')}{date.get('yesterday')}000000")
-    return round(get_solar_data(channels, real_rows), 2)
-
-
-def total_P_today(channels, date: dict) -> float:
-    real_rows = safe_request(
-        url=f"http://195.69.218.121/crq?req=archive&type=g&interval=main&"
-            f"t1={date.get('year')}{date.get('month')}{date.get('today')}000000&"
-            f"t2={date.get('year')}{date.get('month')}{date.get('tomorrow')}000000")
-    return round(get_solar_data(channels, real_rows), 2)
-
-
-def total_P_month(channels, date: dict) -> float:
-    real_rows = safe_request(
-        url=f"http://195.69.218.121/crq?req=archive&type=g&interval=day&"
-            f"t1={date.get('year')}{date.get('month')}010000000&t2={date.get('year')}{date.get('next_month')}01000000")
-    return round(get_solar_data(channels, real_rows), 2)
-
-
-def total_P_year(channels, date: dict) -> float:
-    real_rows = safe_request(
-        url=f"http://195.69.218.121/crq?req=archive&type=g&interval=month&"
-            f"t1={date.get('year')}0101000000&t2={date.get('year')}1231000000")
-    return round(get_solar_data(channels, real_rows), 2)
-
-
 def get_channel_data_for_lifetime() -> dict:
     real_rows = safe_request(
-        url="http://195.69.218.121/crq?req=current"
+        url="http://10.10.20.1/crq?req=current"
     )
     res = {}
     for row in real_rows.split('\n')[2:]:
@@ -144,12 +116,12 @@ def get_live(page, page_size) -> dict:
                 }
         }, list(range(from_, to_ + 1)))
     )
-    date = get_datetime()
-
-    P_total_channels = list(
-        map(lambda i: [SOLAR.get(i).get('P_total'), SOLAR.get(i).get('coefficient')], list(range(from_, to_ + 1)))
-    )
-    P_total_channels = dict(P_total_channels)
+    # date = get_datetime()
+    #
+    # P_total_channels = list(
+    #     map(lambda i: [SOLAR.get(i).get('P_total'), SOLAR.get(i).get('coefficient')], list(range(from_, to_ + 1)))
+    # )
+    # P_total_channels = dict(P_total_channels)
 
     res_data = {}
     for item in data:
@@ -157,11 +129,66 @@ def get_live(page, page_size) -> dict:
 
     response = {
         'data': res_data,
-        'max': get_max_solar(from_, to_, date),
-        "total_P_yesterday": total_P_yesterday(P_total_channels, date),
-        "total_P_today": total_P_today(P_total_channels, date),
-        "total_P_month": total_P_month(P_total_channels, date),
-        "total_P_year": total_P_year(P_total_channels, date),
+        'max': get_max_solar_day(from_, to_),
+        "total_P_yesterday": get_yesterday(from_, to_),
+        "total_P_today": get_today(from_, to_),
+        "total_P_month": gat_month(from_, to_),
+        "total_P_year": get_year(from_, to_),
     }
 
     return response
+
+
+def get_today(page, page_size):
+    from ..models import SolarHour
+    from_ = (page * page_size) - (page_size - 1)
+    to_ = page * page_size
+    now = datetime.now()
+    today_solar_sum = SolarHour.objects.filter(number_solar__range=(from_, to_), created_at__day=now.day,
+                                               created_at__month=now.month,
+                                               created_at__year=now.year).aggregate(total_sum=Sum('total_value'))
+    return today_solar_sum['total_sum']
+
+
+def gat_month(page, page_size):
+    from ..models import SolarDay
+    from_ = (page * page_size) - (page_size - 1)
+    to_ = page * page_size
+    now = datetime.now()
+    month_solar_sum = SolarDay.objects.filter(number_solar__range=(from_, to_), created_at__month=now.month,
+                                              created_at__year=now.year).aggregate(total_sum=Sum('total_value'))
+    return month_solar_sum['total_sum']
+
+
+def get_yesterday(page, page_size):
+    from ..models import SolarDay
+    from_ = (page * page_size) - (page_size - 1)
+    to_ = page * page_size
+    now = datetime.now().today() - timedelta(days=1)
+    yesterday_solar_sum = SolarDay.objects.filter(number_solar__range=(from_, to_), created_at__day=now.day,
+                                                  created_at__month=now.month, created_at__year=now.year).aggregate(
+        total_sum=Sum('total_value'))
+    return yesterday_solar_sum['total_sum']
+
+
+def get_year(page, page_size):
+    from ..models import SolarMonth
+    from_ = (page * page_size) - (page_size - 1)
+    to_ = page * page_size
+    now = datetime.now().today()
+    year_solar_sum = SolarMonth.objects.filter(created_at__year=now.year, number_solar__range=(from_, to_)).aggregate(
+        total_sum=Sum('total_value'))
+    return year_solar_sum['total_sum']
+
+
+def get_max_solar_day(page, page_size):
+    from ..models import Solar
+    from_ = (page * page_size) - (page_size - 1)
+    to_ = page * page_size
+    solars = {}
+    now = datetime.now().today()
+    for i in range(from_, to_ + 1):
+        solar = Solar.objects.filter(created_at__day=now.day, created_at__month=now.month, created_at__year=now.year,
+                                     number_solar=i).order_by('-value').first()
+        solars[f'solar_{solar.number_solar}']: solar
+    return solars

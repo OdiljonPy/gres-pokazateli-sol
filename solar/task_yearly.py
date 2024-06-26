@@ -13,3 +13,4 @@ def task_solar_yearly():
                               .aggregate(total_sum=Sum('total_value')))
         solar_year = SolarYear.objects.create(number_solar=solar_id, total_value=solar_yearly_total, status=0,
                                               name=str(solar_id))
+        solar_year.save()
