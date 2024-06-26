@@ -7,8 +7,10 @@ import sys
 
 def main():
     """Run administrative tasks."""
-    # if 'test' not in sys.argv and 'migrate' not in sys.argv:
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+    if 'test' not in sys.argv and 'migrate' not in sys.argv:
+        from solar.task_hourly import task_hourly
+        task_hourly()
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:
