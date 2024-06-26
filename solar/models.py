@@ -28,7 +28,6 @@ class Solar(models.Model):
 class SolarHour(models.Model):
     number_solar = models.IntegerField(choices=CHOICES_SOLAR)
     name = models.CharField(max_length=255)
-    time = models.DateTimeField()
     total_value = models.FloatField()
     status = models.IntegerField()
 
@@ -42,7 +41,6 @@ class SolarHour(models.Model):
 class SolarDay(models.Model):
     number_solar = models.IntegerField(choices=CHOICES_SOLAR)
     name = models.CharField(max_length=255)
-    time = models.DateTimeField()
     total_value = models.FloatField()
     status = models.IntegerField()
 
@@ -56,7 +54,6 @@ class SolarDay(models.Model):
 class SolarMonth(models.Model):
     number_solar = models.IntegerField(choices=CHOICES_SOLAR)
     name = models.CharField(max_length=255)
-    time = models.DateTimeField()
     total_value = models.FloatField()
     status = models.IntegerField()
 
@@ -70,7 +67,6 @@ class SolarMonth(models.Model):
 class SolarYear(models.Model):
     number_solar = models.IntegerField(choices=CHOICES_SOLAR)
     name = models.CharField(max_length=255)
-    time = models.DateTimeField()
     total_value = models.FloatField()
     status = models.IntegerField()
 
