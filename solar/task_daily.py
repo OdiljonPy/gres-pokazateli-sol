@@ -11,4 +11,6 @@ def task_solar_daily():
         solar_daily_total = (SolarHour.objects.filter(number_solar=solar_id, created_at__lte=now,
                                                       created_at__gte=now - timedelta(days=1))
                              .aggregate(total_sum=Sum('total_value')))
-        solar_day = SolarDay.objects.create(number_solar=solar_id, total_value=solar_daily_total, status=0, name=str(solar_id))
+        solar_day = SolarDay.objects.create(number_solar=solar_id, total_value=solar_daily_total, status=0,
+                                            name=str(solar_id))
+        solar_day.save()
