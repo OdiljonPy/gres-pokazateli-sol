@@ -25,21 +25,6 @@ class Solar(models.Model):
         return self.name
 
 
-# class SolarSec(models.Model):
-#     number_solar = models.IntegerField(choices=CHOICES_SOLAR)
-#     name = models.CharField(max_length=255)
-#     time = models.DateTimeField()
-#     value = models.FloatField()
-#     status = models.IntegerField()
-#     key = models.CharField(max_length=50, blank=True, null=True)
-#     created_at = models.DateTimeField(auto_now_add=True)
-#     updated_at = models.DateTimeField(auto_now=True)
-#
-#     def __str__(self):
-#         return self.name
-#
-
-
 class SolarHour(models.Model):
     number_solar = models.IntegerField(choices=CHOICES_SOLAR)
     name = models.CharField(max_length=255)
@@ -80,7 +65,6 @@ class SolarMonth(models.Model):
 
     def __str__(self):
         return self.name
-
 
 
 class SolarYear(models.Model):
