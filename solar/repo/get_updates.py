@@ -7,6 +7,8 @@ from django.conf import settings
 from ..exceptions import BadRequestException
 from django.db.models import Sum
 
+from ..serializers import ReadOnlySolarDAYSerializer
+
 SOLAR = settings.SOLAR
 
 
@@ -32,7 +34,8 @@ def get_solar_data(channels: dict, rows_: str) -> float:
 
 def get_channel_data_for_lifetime() -> dict:
     real_rows = safe_request(
-        url="http://10.10.20.1/crq?req=current"
+        # url="http://10.10.20.1/crq?req=current"
+        url="http://195.69.218.121/crq?req=current"
     )
     res = {}
     for row in real_rows.split('\n')[2:]:
@@ -46,7 +49,6 @@ def get_live(page, page_size) -> dict:
     to_ = page * page_size
     if to_ > len(SOLAR.keys()):
         to_ = len(SOLAR.keys())
-
     all_channels = get_channel_data_for_lifetime()
 
     data = list(
@@ -76,13 +78,6 @@ def get_live(page, page_size) -> dict:
                 }
         }, list(range(from_, to_ + 1)))
     )
-    # date = get_datetime()
-    #
-    # P_total_channels = list(
-    #     map(lambda i: [SOLAR.get(i).get('P_total'), SOLAR.get(i).get('coefficient')], list(range(from_, to_ + 1)))
-    # )
-    # P_total_channels = dict(P_total_channels)
-
     res_data = {}
     for item in data:
         res_data[list(item.keys())[0]] = list(item.values())[0]
@@ -114,10 +109,11 @@ def gat_month(page, page_size):
     from ..models import SolarDay
     from_ = (page * page_size) - (page_size - 1)
     to_ = page * page_size
-    now = datetime.now()
+    now = datetime.now().today()
+    print(SolarDay.objects.all().values())
     month_solar_sum = SolarDay.objects.filter(number_solar__range=(from_, to_), created_at__month=now.month,
                                               created_at__year=now.year).aggregate(total_sum=Sum('total_value'))
-    return month_solar_sum['total_sum']
+    return month_solar_sum['total_sum'] or 0
 
 
 def get_yesterday(page, page_size):
@@ -128,7 +124,7 @@ def get_yesterday(page, page_size):
     yesterday_solar_sum = SolarDay.objects.filter(number_solar__range=(from_, to_), created_at__day=now.day,
                                                   created_at__month=now.month, created_at__year=now.year).aggregate(
         total_sum=Sum('total_value'))
-    return yesterday_solar_sum['total_sum']
+    return yesterday_solar_sum['total_sum'] or 0
 
 
 def get_year(page, page_size):
@@ -138,7 +134,7 @@ def get_year(page, page_size):
     now = datetime.now().today()
     year_solar_sum = SolarMonth.objects.filter(created_at__year=now.year, number_solar__range=(from_, to_)).aggregate(
         total_sum=Sum('total_value'))
-    return year_solar_sum['total_sum']
+    return year_solar_sum['total_sum'] or 0
 
 
 def get_max_solar_day(page, page_size):
@@ -150,5 +146,5 @@ def get_max_solar_day(page, page_size):
     for i in range(from_, to_ + 1):
         solar = Solar.objects.filter(created_at__day=now.day, created_at__month=now.month, created_at__year=now.year,
                                      number_solar=i).order_by('-value').first()
-        solars[f'solar_{solar.number_solar}']: solar
+        solars[f'solar_{solar.number_solar}'] = ReadOnlySolarDAYSerializer(solar).data
     return solars

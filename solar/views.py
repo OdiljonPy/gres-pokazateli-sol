@@ -2,8 +2,8 @@ from collections import defaultdict
 from contextlib import suppress
 from datetime import timedelta
 
-from .task_daily import task_solar_daily
-from .task_hourly import task_hourly
+# from .task_daily import task_daily
+# from .task_hourly import task_hourly
 from django.contrib.auth.models import User
 from django.db.models import Sum, Q
 from django.shortcuts import render
@@ -22,12 +22,23 @@ from .repo.get_updates import get_live
 from .repo.get_data import get_data
 from django.conf import settings
 
-from .task_monthly import task_solar_month
-from .task_yearly import task_solar_yearly
+# from .task_monthly import task_solar_month
+# from .task_yearly import task_solar_yearly
 from .utils import create_background_task
 
 
 def home(request):
+    from .models import Solar
+    import datetime
+    # Create your tests here.
+
+    lst = [80, 90, 100, 110, 150, 200, 230, 400]
+
+    for num in range(1, 5):
+        for i in lst:
+            solar = Solar.objects.create(number_solar=num, name='G275', time=datetime.datetime.now(), value=i, status=0,
+                                         key='P_total')
+            solar.save()
     return render(request, 'home.html')
 
 
@@ -82,9 +93,10 @@ def login(request):
 @api_view(['GET'])
 # @permission_classes([IsAuthenticated])
 def get_updates(request):
+    print("hello")
     page = int(request.GET.get('page', 1))
     page_size = int(request.GET.get('page_size', 2))
-
+    print("hello2")
     return Response({"response": get_live(page, page_size), "ok": True}, status=status.HTTP_200_OK)
 
 
@@ -98,12 +110,10 @@ def get_data_api(request):
 
 @api_view(['GET'])
 def run_scheduler_api(request):
+    from .create import create_task
     if settings.SCHEDULER == 0:
+        create_task()
         create_background_task()
-        task_hourly()
-        task_solar_daily()
-        task_solar_month()
-        task_solar_yearly()
         settings.SCHEDULER = 1
         return Response({"ok": True}, status=status.HTTP_200_OK)
 

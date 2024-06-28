@@ -5,6 +5,7 @@ import requests
 from apscheduler.schedulers.background import BackgroundScheduler
 from django.conf import settings
 
+
 # def fetch_solar_data(url):
 #     response = requests.get(url)
 #     if response.status_code != 200:
@@ -99,7 +100,8 @@ def parse_line(line, channels: dict) -> dict:
 
 def create_solar_data():
     from .serializers import SolarSerializer
-    lines = fetch_solar_data('http://10.10.20.1/crq?req=current')
+    # lines = fetch_solar_data('http://10.10.20.1/crq?req=current')
+    lines = fetch_solar_data('http://195.69.218.121/crq?req=current')
     P_total_channels = list(
         map(
             lambda i: [settings.SOLAR.get(i).get('P_total'), [i, settings.SOLAR.get(i).get('coefficient')]],
@@ -119,5 +121,5 @@ def create_solar_data():
 
 def create_background_task():
     scheduler = BackgroundScheduler()
-    scheduler.add_job(create_solar_data, trigger='interval', seconds=5, timezone='Asia/Tashkent')
+    scheduler.add_job(create_solar_data, trigger='interval', seconds=5, timezone='UTC')
     scheduler.start()
