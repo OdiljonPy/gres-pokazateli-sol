@@ -7,7 +7,7 @@ from django.conf import settings
 from ..exceptions import BadRequestException
 from django.db.models import Sum
 
-from ..serializers import ReadOnlySolarDAYSerializer
+from ..serializers import ReadOnlySolarSerializer
 
 SOLAR = settings.SOLAR
 
@@ -57,23 +57,23 @@ def get_live(page, page_size) -> dict:
                 {
                     'P_total': round(
                         (all_channels.get(SOLAR.get(i).get('P_total'), 0.0) / 1000) * SOLAR.get(i).get('coefficient'),
-                        2),
+                        1),
                     'P_1': round(
-                        (all_channels.get(SOLAR.get(i).get('P_1'), 0.0) / 1000) * SOLAR.get(i).get('coefficient'), 2),
+                        (all_channels.get(SOLAR.get(i).get('P_1'), 0.0) / 1000) * SOLAR.get(i).get('coefficient'), 1),
                     'P_2': round(
-                        (all_channels.get(SOLAR.get(i).get('P_2'), 0.0) / 1000) * SOLAR.get(i).get('coefficient'), 2),
+                        (all_channels.get(SOLAR.get(i).get('P_2'), 0.0) / 1000) * SOLAR.get(i).get('coefficient'), 1),
                     'P_3': round(
-                        (all_channels.get(SOLAR.get(i).get('P_3'), 0.0) / 1000) * SOLAR.get(i).get('coefficient'), 2),
-                    'U_1': round(all_channels.get(SOLAR.get(i).get('U_1'), 0.0), 2),
-                    'U_2': round(all_channels.get(SOLAR.get(i).get('U_2'), 0.0), 2),
-                    'U_3': round(all_channels.get(SOLAR.get(i).get('U_3'), 0.0), 2),
+                        (all_channels.get(SOLAR.get(i).get('P_3'), 0.0) / 1000) * SOLAR.get(i).get('coefficient'), 1),
+                    'U_1': round(all_channels.get(SOLAR.get(i).get('U_1'), 0.0), 1),
+                    'U_2': round(all_channels.get(SOLAR.get(i).get('U_2'), 0.0), 1),
+                    'U_3': round(all_channels.get(SOLAR.get(i).get('U_3'), 0.0), 1),
                     'I_1': round(
-                        (all_channels.get(SOLAR.get(i).get('I_1'), 0.0) / 1000) * SOLAR.get(i).get('coefficient'), 2),
+                        (all_channels.get(SOLAR.get(i).get('I_1'), 0.0) / 1000) * SOLAR.get(i).get('coefficient'), 1),
                     'I_2': round(
-                        (all_channels.get(SOLAR.get(i).get('I_2'), 0.0) / 1000) * SOLAR.get(i).get('coefficient'), 2),
+                        (all_channels.get(SOLAR.get(i).get('I_2'), 0.0) / 1000) * SOLAR.get(i).get('coefficient'), 1),
                     'I_3': round(
-                        (all_channels.get(SOLAR.get(i).get('I_3'), 0.0) / 1000) * SOLAR.get(i).get('coefficient'), 2),
-                    'f': round(all_channels.get(SOLAR.get(i).get('f'), 0.0), 2),
+                        (all_channels.get(SOLAR.get(i).get('I_3'), 0.0) / 1000) * SOLAR.get(i).get('coefficient'), 1),
+                    'f': round(all_channels.get(SOLAR.get(i).get('f'), 0.0), 1),
                     'count': SOLAR.get(i).get('count')
                 }
         }, list(range(from_, to_ + 1)))
@@ -85,41 +85,34 @@ def get_live(page, page_size) -> dict:
     response = {
         'data': res_data,
         'max': get_max_solar_day(from_, to_),
-        "total_P_yesterday": get_yesterday(from_, to_),
-        "total_P_today": get_today(from_, to_),
-        "total_P_month": gat_month(from_, to_),
-        "total_P_year": get_year(from_, to_),
+        "total_P_yesterday": round(get_yesterday(from_, to_), 1),
+        "total_P_today": round(get_today(from_, to_), 1),
+        "total_P_month": round(gat_month(from_, to_), 1),
+        "total_P_year": round(get_year(from_, to_), 1),
     }
 
     return response
 
 
-def get_today(page, page_size):
+def get_today(from_, to_):
     from ..models import SolarHour
-    from_ = (page * page_size) - (page_size - 1)
-    to_ = page * page_size
     now = datetime.now()
     today_solar_sum = SolarHour.objects.filter(number_solar__range=(from_, to_), created_at__day=now.day,
                                                created_at__month=now.month,
                                                created_at__year=now.year).aggregate(total_sum=Sum('total_value'))
-    return today_solar_sum['total_sum']
+    return today_solar_sum['total_sum'] or 0
 
 
-def gat_month(page, page_size):
+def gat_month(from_, to_):
     from ..models import SolarDay
-    from_ = (page * page_size) - (page_size - 1)
-    to_ = page * page_size
     now = datetime.now().today()
-    print(SolarDay.objects.all().values())
     month_solar_sum = SolarDay.objects.filter(number_solar__range=(from_, to_), created_at__month=now.month,
                                               created_at__year=now.year).aggregate(total_sum=Sum('total_value'))
     return month_solar_sum['total_sum'] or 0
 
 
-def get_yesterday(page, page_size):
+def get_yesterday(from_, to_):
     from ..models import SolarDay
-    from_ = (page * page_size) - (page_size - 1)
-    to_ = page * page_size
     now = datetime.now().today() - timedelta(days=1)
     yesterday_solar_sum = SolarDay.objects.filter(number_solar__range=(from_, to_), created_at__day=now.day,
                                                   created_at__month=now.month, created_at__year=now.year).aggregate(
@@ -137,14 +130,12 @@ def get_year(page, page_size):
     return year_solar_sum['total_sum'] or 0
 
 
-def get_max_solar_day(page, page_size):
+def get_max_solar_day(from_, to_):
     from ..models import Solar
-    from_ = (page * page_size) - (page_size - 1)
-    to_ = page * page_size
     solars = {}
     now = datetime.now().today()
     for i in range(from_, to_ + 1):
         solar = Solar.objects.filter(created_at__day=now.day, created_at__month=now.month, created_at__year=now.year,
                                      number_solar=i).order_by('-value').first()
-        solars[f'solar_{solar.number_solar}'] = ReadOnlySolarDAYSerializer(solar).data
+        solars[f'solar_{solar.number_solar}'] = ReadOnlySolarSerializer(solar).data
     return solars

@@ -36,8 +36,8 @@ class ReadOnlySolarDAYSerializer(serializers.ModelSerializer):
         data = {
             'id': instance.id,
             'number_solar': instance.number_solar,
-            instance.key: instance.value,
             'created_at': formatted_crated_at,
+            'value': instance.total_value,
         }
 
         return data

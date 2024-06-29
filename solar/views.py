@@ -1,53 +1,31 @@
 from collections import defaultdict
-from contextlib import suppress
 from datetime import timedelta
 
-# from .task_daily import task_daily
-# from .task_hourly import task_hourly
+from django.conf import settings
 from django.contrib.auth.models import User
-from django.db.models import Sum, Q
+from django.db.models import Q
 from django.shortcuts import render
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
-
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import Solar
-from .serializers import ReadOnlySolarSerializer, SolarGetUpdatesSerializer
-# from .utils import create_solar_data_live
-from .repo.get_updates import get_live
+from .models import Solar, SolarYear
 from .repo.get_data import get_data
-from django.conf import settings
-
-# from .task_monthly import task_solar_month
-# from .task_yearly import task_solar_yearly
+from .repo.get_updates import get_live
+from .serializers import ReadOnlySolarSerializer
 from .utils import create_background_task
+from django.db.models import Sum
 
 
 def home(request):
-    from .models import Solar
-    import datetime
-    # Create your tests here.
-
-    lst = [80, 90, 100, 110, 150, 200, 230, 400]
-
-    for num in range(1, 5):
-        for i in lst:
-            solar = Solar.objects.create(number_solar=num, name='G275', time=datetime.datetime.now(), value=i, status=0,
-                                         key='P_total')
-            solar.save()
     return render(request, 'home.html')
 
 
-def total_p_sum(solar_objs):
-    return round(sum(obj['total_P'] for obj in solar_objs), 2)
-
-
 @api_view(['GET'])
-# @permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated])
 def get_solar_day(request):
     page = int(request.GET.get('page', 1))
     page_size = int(request.GET.get('page_size', 2))
@@ -91,21 +69,32 @@ def login(request):
 
 
 @api_view(['GET'])
-# @permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated])
 def get_updates(request):
-    print("hello")
     page = int(request.GET.get('page', 1))
     page_size = int(request.GET.get('page_size', 2))
-    print("hello2")
     return Response({"response": get_live(page, page_size), "ok": True}, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
-# @permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated])
 def get_data_api(request):
     page = int(request.GET.get('page', 1))
     page_size = int(request.GET.get('page_size', 2))
     return Response(get_data(page, page_size), status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_year(request):
+    page = int(request.GET.get('page', 1))
+    page_size = int(request.GET.get('page_size', 2))
+    from_ = (page * page_size) - (page_size - 1)
+    to_ = page * page_size
+    solar_years = SolarYear.objects.filter(number_solar__range=(from_, to_))
+    data = solar_years.values('created_at__year').annotate(total_value=Sum('total_value'))
+    formatted_data = [{'year': item['created_at__year'], 'value': item['total_value']} for item in data]
+    return Response({"result": formatted_data, "ok": True}, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
