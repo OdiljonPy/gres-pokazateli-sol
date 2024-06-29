@@ -66,6 +66,7 @@ class SolarMonth(models.Model):
 
 class SolarYear(models.Model):
     number_solar = models.IntegerField(choices=CHOICES_SOLAR)
+    year = models.IntegerField()
     name = models.CharField(max_length=255)
     total_value = models.FloatField()
     status = models.IntegerField()

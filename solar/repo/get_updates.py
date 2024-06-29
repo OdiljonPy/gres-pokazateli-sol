@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 
 import requests
 from django.conf import settings
+from django.utils import timezone
 
 from ..exceptions import BadRequestException
 from django.db.models import Sum
@@ -34,8 +35,7 @@ def get_solar_data(channels: dict, rows_: str) -> float:
 
 def get_channel_data_for_lifetime() -> dict:
     real_rows = safe_request(
-        # url="http://10.10.20.1/crq?req=current"
-        url="http://195.69.218.121/crq?req=current"
+        url="http://10.10.20.1/crq?req=current"
     )
     res = {}
     for row in real_rows.split('\n')[2:]:
@@ -96,7 +96,7 @@ def get_live(page, page_size) -> dict:
 
 def get_today(from_, to_):
     from ..models import SolarHour
-    now = datetime.now()
+    now = timezone.now()
     today_solar_sum = SolarHour.objects.filter(number_solar__range=(from_, to_), created_at__day=now.day,
                                                created_at__month=now.month,
                                                created_at__year=now.year).aggregate(total_sum=Sum('total_value'))
@@ -105,7 +105,7 @@ def get_today(from_, to_):
 
 def gat_month(from_, to_):
     from ..models import SolarDay
-    now = datetime.now().today()
+    now = timezone.now().today()
     month_solar_sum = SolarDay.objects.filter(number_solar__range=(from_, to_), created_at__month=now.month,
                                               created_at__year=now.year).aggregate(total_sum=Sum('total_value'))
     return month_solar_sum['total_sum'] or 0
@@ -113,7 +113,7 @@ def gat_month(from_, to_):
 
 def get_yesterday(from_, to_):
     from ..models import SolarDay
-    now = datetime.now().today() - timedelta(days=1)
+    now = timezone.now().today() - timedelta(days=1)
     yesterday_solar_sum = SolarDay.objects.filter(number_solar__range=(from_, to_), created_at__day=now.day,
                                                   created_at__month=now.month, created_at__year=now.year).aggregate(
         total_sum=Sum('total_value'))
@@ -124,7 +124,7 @@ def get_year(page, page_size):
     from ..models import SolarMonth
     from_ = (page * page_size) - (page_size - 1)
     to_ = page * page_size
-    now = datetime.now().today()
+    now = timezone.now().today()
     year_solar_sum = SolarMonth.objects.filter(created_at__year=now.year, number_solar__range=(from_, to_)).aggregate(
         total_sum=Sum('total_value'))
     return year_solar_sum['total_sum'] or 0
@@ -133,7 +133,7 @@ def get_year(page, page_size):
 def get_max_solar_day(from_, to_):
     from ..models import Solar
     solars = {}
-    now = datetime.now().today()
+    now = timezone.now().today()
     for i in range(from_, to_ + 1):
         solar = Solar.objects.filter(created_at__day=now.day, created_at__month=now.month, created_at__year=now.year,
                                      number_solar=i).order_by('-value').first()

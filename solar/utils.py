@@ -41,8 +41,7 @@ def parse_line(line, channels: dict) -> dict:
 
 def create_solar_data():
     from .serializers import SolarSerializer
-    # lines = fetch_solar_data('http://10.10.20.1/crq?req=current')
-    lines = fetch_solar_data('http://195.69.218.121/crq?req=current')
+    lines = fetch_solar_data('http://10.10.20.1/crq?req=current')
     P_total_channels = list(
         map(
             lambda i: [settings.SOLAR.get(i).get('P_total'), [i, settings.SOLAR.get(i).get('coefficient')]],

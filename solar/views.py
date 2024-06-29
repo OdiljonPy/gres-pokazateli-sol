@@ -92,8 +92,8 @@ def get_year(request):
     from_ = (page * page_size) - (page_size - 1)
     to_ = page * page_size
     solar_years = SolarYear.objects.filter(number_solar__range=(from_, to_))
-    data = solar_years.values('created_at__year').annotate(total_value=Sum('total_value'))
-    formatted_data = [{'year': item['created_at__year'], 'value': item['total_value']} for item in data]
+    data = solar_years.values('year').annotate(total_value=Sum('total_value'))
+    formatted_data = [{'year': item['year'], 'value': item['total_value']} for item in data]
     return Response({"result": formatted_data, "ok": True}, status=status.HTTP_200_OK)
 
 
