@@ -4,6 +4,9 @@ from django.conf import settings
 from django.db.models import Avg, Sum
 from django.utils import timezone
 from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
+
+from solar.utils import previous_month_year, previous_year
 
 
 def create_hourly_solar():
@@ -57,9 +60,8 @@ def create_daily_solar():
 
 
 def solar_month():
-    print('oylik')
     from .models import SolarDay, SolarMonth
-    now = timezone.now()
+    previous_month, previous_year_ = previous_month_year()
     solar_ids = settings.SOLAR.keys()
     for solar_id in solar_ids:
         solar = SolarDay.objects.filter(number_solar=solar_id).first()
@@ -67,8 +69,8 @@ def solar_month():
             continue
         solar_month_total = SolarDay.objects.filter(
             number_solar=solar_id,
-            created_at__lte=now,
-            created_at__gte=now - timedelta(days=30)
+            created_at__month=previous_month,
+            created_at__year=previous_year_
         ).aggregate(total_sum=Sum('total_value'))
         total_value = solar_month_total.get('total_sum') or 0
         solar_month_sum = SolarMonth.objects.create(
@@ -83,7 +85,7 @@ def solar_month():
 def solar_yearly():
     print('yillik')
     from .models import SolarMonth, SolarYear
-    now = timezone.now()
+    previous_year_ = previous_year()
     solar_ids = settings.SOLAR.keys()
     for solar_id in solar_ids:
         solar = SolarMonth.objects.filter(number_solar=solar_id).first()
@@ -91,8 +93,7 @@ def solar_yearly():
             continue
         solar_yearly_total = SolarMonth.objects.filter(
             number_solar=solar_id,
-            created_at__lte=now,
-            created_at__gte=now - timedelta(days=365)
+            created_at__year=previous_year_
         ).aggregate(total_sum=Sum('total_value'))
         total_value = solar_yearly_total.get('total_sum') or 0
         solar_year_sum = SolarYear.objects.create(
@@ -106,8 +107,12 @@ def solar_yearly():
 
 def create_task():
     scheduler = BackgroundScheduler()
-    scheduler.add_job(create_hourly_solar, trigger='cron', minute=47, timezone='UTC')
-    scheduler.add_job(create_daily_solar, trigger='cron', hour=17, minute=8, timezone='UTC')
-    scheduler.add_job(solar_month, trigger='cron', day=28, hour=16, minute=49, timezone='UTC')
-    scheduler.add_job(solar_yearly, trigger='cron', month=6, day=28, hour=16, minute=50, timezone='UTC')
+    scheduler.add_job(create_hourly_solar, trigger='cron', minute=0, timezone='UTC')
+    scheduler.add_job(create_daily_solar, trigger='cron', hour=23, minute=58, timezone='UTC')
+    trigger = CronTrigger(day='last', hour=23, minute=58, timezone='UTC')
+    scheduler.add_job(solar_month, trigger=trigger)
+    # scheduler.add_job(solar_month, trigger='cron', day=31, hour=23, minute=58, timezone='UTC')
+    scheduler.add_job(solar_yearly, trigger='cron', month=12, day=31, hour=23, minute=58, timezone='UTC')
     scheduler.start()
+    for i in scheduler.get_jobs():
+        print(i)

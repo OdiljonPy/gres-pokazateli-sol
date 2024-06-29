@@ -1,5 +1,6 @@
 from contextlib import suppress
 from datetime import datetime
+from django.utils import timezone
 
 import requests
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -123,3 +124,17 @@ def create_background_task():
     scheduler = BackgroundScheduler()
     scheduler.add_job(create_solar_data, trigger='interval', seconds=5, timezone='UTC')
     scheduler.start()
+    for i in scheduler.get_jobs():
+        print(i)
+
+
+def previous_month_year():
+    now = timezone.now()
+    previous_month = now.month - 1 if now.month > 1 else 12
+    previous_year = now.year if now.month > 1 else now.year - 1
+    return previous_month, previous_year
+
+
+def previous_year():
+    now = timezone.now()
+    return now.year - 1
